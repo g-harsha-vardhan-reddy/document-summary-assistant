@@ -320,3 +320,6 @@ Possible future enhancements include:
 **Gopireddy Harsha Vardhan Reddy**
 
 Document Summary Assistant — Full-Stack AI Document Processing Application
+![home image](image.png)\
+![before clicking on get summery](image-1.png)
+![after clicking and selecting of summery size as medium it shows key-points,summery,suggestions,extracted data](image-2.png)
