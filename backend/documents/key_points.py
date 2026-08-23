@@ -1,9 +1,7 @@
 import re
 
 
-# ============================================================
 # TEXT CLEANING
-# ============================================================
 
 def clean_text(text):
     """
@@ -69,9 +67,7 @@ def clean_text(text):
     return text.strip()
 
 
-# ============================================================
 # HEADING / METADATA DETECTION
-# ============================================================
 
 def is_heading_or_metadata(text):
     """
@@ -150,10 +146,7 @@ def is_heading_or_metadata(text):
 
     return False
 
-
-# ============================================================
 # SOFTWARE / TOOL LIST DETECTION
-# ============================================================
 
 def is_software_only(text):
     """

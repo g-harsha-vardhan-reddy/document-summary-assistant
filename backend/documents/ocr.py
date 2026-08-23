@@ -4,18 +4,14 @@ import pymupdf
 import re
 
 
-# ============================================================
 # TESSERACT CONFIGURATION
-# ============================================================
 
 pytesseract.pytesseract.tesseract_cmd = (
     r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 )
 
 
-# ============================================================
 # CLEAN OCR TEXT
-# ============================================================
 
 def clean_ocr_text(text):
     """
@@ -73,9 +69,7 @@ def clean_ocr_text(text):
 
         lines.append(line)
 
-    # ========================================================
     # JOIN OCR-WRAPPED LINES
-    # ========================================================
 
     cleaned_lines = []
 
@@ -92,9 +86,7 @@ def clean_ocr_text(text):
 
             continue
 
-        # ----------------------------------------------------
         # Numbered item → new line
-        # ----------------------------------------------------
 
         if re.match(
             r"^\d+[\.\)]\s+",
@@ -108,9 +100,7 @@ def clean_ocr_text(text):
 
             continue
 
-        # ----------------------------------------------------
         # Bullet item → new line
-        # ----------------------------------------------------
 
         if re.match(
             r"^[\-\*\•]\s+",
@@ -123,10 +113,7 @@ def clean_ocr_text(text):
             current = line
 
             continue
-
-        # ----------------------------------------------------
         # Heading-like line
-        # ----------------------------------------------------
 
         heading_patterns = [
             r"^document summary assistant",
@@ -154,10 +141,7 @@ def clean_ocr_text(text):
             current = line
 
             continue
-
-        # ----------------------------------------------------
         # First line
-        # ----------------------------------------------------
 
         if not current:
 
@@ -165,9 +149,7 @@ def clean_ocr_text(text):
 
             continue
 
-        # ----------------------------------------------------
-        # Previous line already ended a sentence
-        # ----------------------------------------------------
+        # Previous line already ended a sentence-
 
         if current.endswith(
             (".", "!", "?", ":")
@@ -179,18 +161,14 @@ def clean_ocr_text(text):
 
         else:
 
-            # ------------------------------------------------
             # OCR wrapped line → join
-            # ------------------------------------------------
 
             current += " " + line
 
     if current:
         cleaned_lines.append(current)
 
-    # ========================================================
     # FINAL CLEANUP
-    # ========================================================
 
     result = "\n".join(cleaned_lines)
 
@@ -211,9 +189,7 @@ def clean_ocr_text(text):
     return result.strip()
 
 
-# ============================================================
 # IMAGE OCR
-# ============================================================
 
 def extract_image_text(file_path):
     """
@@ -236,9 +212,7 @@ def extract_image_text(file_path):
     return clean_ocr_text(text)
 
 
-# ============================================================
 # SCANNED PDF OCR
-# ============================================================
 
 def extract_scanned_pdf_text(file_path):
     """

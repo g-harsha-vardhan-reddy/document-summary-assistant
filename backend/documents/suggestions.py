@@ -15,9 +15,7 @@ def generate_suggestions(text):
 
     lower_text = text.lower()
 
-    # -------------------------------------------------
     # 1. DOCUMENT LENGTH
-    # -------------------------------------------------
 
     word_count = len(text.split())
 
@@ -27,9 +25,7 @@ def generate_suggestions(text):
             "details or supporting information."
         )
 
-    # -------------------------------------------------
     # 2. STRUCTURE
-    # -------------------------------------------------
 
     if not any(
         keyword in lower_text
@@ -47,9 +43,7 @@ def generate_suggestions(text):
             "main content, and conclusion to improve document structure."
         )
 
-    # -------------------------------------------------
     # 3. NUMBERED / BULLET INFORMATION
-    # -------------------------------------------------
 
     has_bullets = bool(
         re.search(
@@ -71,10 +65,7 @@ def generate_suggestions(text):
             "important information to improve readability."
         )
 
-    # -------------------------------------------------
     # 4. VERY LONG SENTENCES
-    # -------------------------------------------------
-
     sentences = re.split(
         r"(?<=[.!?])\s+",
         text
@@ -92,10 +83,7 @@ def generate_suggestions(text):
             "Some sentences are quite long. Consider breaking them "
             "into shorter sentences for better readability."
         )
-
-    # -------------------------------------------------
     # 5. REPEATED WORDS
-    # -------------------------------------------------
 
     words = re.findall(
         r"\b[a-zA-Z]{4,}\b",
@@ -123,9 +111,7 @@ def generate_suggestions(text):
             "the wording where appropriate."
         )
 
-    # -------------------------------------------------
     # 6. OCR QUALITY
-    # -------------------------------------------------
 
     ocr_patterns = [
         "documentcreated",
@@ -149,9 +135,7 @@ def generate_suggestions(text):
             "issues. Consider reviewing the original document for accuracy."
         )
 
-    # -------------------------------------------------
     # 7. GENERAL CLARITY
-    # -------------------------------------------------
 
     if word_count >= 100:
 
@@ -160,9 +144,7 @@ def generate_suggestions(text):
             "using headings, bullet points, or concise summaries."
         )
 
-    # -------------------------------------------------
     # 8. FINAL FALLBACK
-    # -------------------------------------------------
 
     if not suggestions:
 

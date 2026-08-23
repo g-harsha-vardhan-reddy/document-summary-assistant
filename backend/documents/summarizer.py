@@ -4,9 +4,7 @@ import re
 from .chunker import split_text
 
 
-# ==========================================================
 # MODEL
-# ==========================================================
 
 MODEL_NAME = "facebook/bart-large-cnn"
 
@@ -19,9 +17,7 @@ model = AutoModelForSeq2SeqLM.from_pretrained(
 )
 
 
-# ==========================================================
 # SUMMARY SETTINGS
-# ==========================================================
 
 SUMMARY_SENTENCE_LIMITS = {
     "short": 2,
@@ -29,10 +25,7 @@ SUMMARY_SENTENCE_LIMITS = {
     "long": 6,
 }
 
-
-# ==========================================================
 # CLEAN DOCUMENT
-# ==========================================================
 
 def clean_document_text(text):
     """
@@ -104,10 +97,7 @@ def clean_document_text(text):
 
     return cleaned
 
-
-# ==========================================================
 # EXTRACT SENTENCES
-# ==========================================================
 
 def extract_sentences(text):
     """
@@ -138,10 +128,7 @@ def extract_sentences(text):
 
     return result
 
-
-# ==========================================================
 # SCORE IMPORTANT SENTENCES
-# ==========================================================
 
 def score_sentences(sentences):
     """
@@ -238,10 +225,7 @@ def score_sentences(sentences):
 
     return scored
 
-
-# ==========================================================
 # SMALL DOCUMENT SUMMARY
-# ==========================================================
 
 def summarize_small_document(
     text,
@@ -285,9 +269,8 @@ def summarize_small_document(
     )
 
 
-# ==========================================================
 # BART SUMMARY FOR LARGE DOCUMENTS
-# ==========================================================
+
 
 def summarize_chunk(
     text,
@@ -369,10 +352,8 @@ def summarize_chunk(
         skip_special_tokens=True
     ).strip()
 
-
-# ==========================================================
 # COMPLETE SUMMARY
-# ==========================================================
+
 
 def generate_summary(
     text,
@@ -398,9 +379,8 @@ def generate_summary(
     }:
         length = "medium"
 
-    # ------------------------------------------------------
     # CLEAN DOCUMENT
-    # ------------------------------------------------------
+
 
     cleaned_text = clean_document_text(
         text
@@ -409,9 +389,8 @@ def generate_summary(
     if not cleaned_text:
         return ""
 
-    # ------------------------------------------------------
     # SPLIT DOCUMENT
-    # ------------------------------------------------------
+
 
     chunks = split_text(
         cleaned_text,
@@ -421,10 +400,8 @@ def generate_summary(
     if not chunks:
         return ""
 
-    # ======================================================
     # SMALL DOCUMENT
-    # ======================================================
-
+ 
     if len(chunks) == 1:
 
         return summarize_small_document(
@@ -432,9 +409,7 @@ def generate_summary(
             length
         )
 
-    # ======================================================
     # LARGE DOCUMENT
-    # ======================================================
 
     chunk_summaries = []
 
@@ -457,9 +432,8 @@ def generate_summary(
         chunk_summaries
     )
 
-    # ------------------------------------------------------
+
     # FINAL LARGE-DOCUMENT SUMMARY
-    # ------------------------------------------------------
 
     final_summary = summarize_chunk(
         combined_text,
