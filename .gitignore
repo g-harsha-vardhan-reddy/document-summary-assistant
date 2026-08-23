@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment variables
+.env
+.env.*
+
+# Node
+node_modules/
+dist/
+build/
+
+# Uploaded / temporary files
+uploads/
+temp/
+*.tmp
+
+# IDE
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+backend/db.sqlite3
+backend/test.pdf
+backend/test.txt
