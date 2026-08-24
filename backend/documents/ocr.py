@@ -2,16 +2,26 @@ from PIL import Image
 import pytesseract
 import pymupdf
 import re
+import os
+import shutil
 
 
-# TESSERACT CONFIGURATION
+# Tesseract configuration
 
-pytesseract.pytesseract.tesseract_cmd = (
-    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-)
+if os.name == "nt":
+    windows_tesseract = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+    if os.path.exists(windows_tesseract):
+        pytesseract.pytesseract.tesseract_cmd = windows_tesseract
+
+else:
+    tesseract_path = shutil.which("tesseract")
+
+    if tesseract_path:
+        pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
 
-# CLEAN OCR TEXT
+# Clean OCR text
 
 def clean_ocr_text(text):
     """
@@ -21,14 +31,11 @@ def clean_ocr_text(text):
     if not text:
         return ""
 
-    # Normalize line endings
     text = text.replace("\r\n", "\n")
     text = text.replace("\r", "\n")
 
-    # Fix common OCR encoding
     text = text.replace("â€¢", "•")
 
-    # Fix common joined words
     corrections = [
         (r"(?i)documentthis", "document this"),
         (r"(?i)fortesting", "for testing"),
@@ -44,76 +51,44 @@ def clean_ocr_text(text):
     ]
 
     for pattern, replacement in corrections:
-        text = re.sub(
-            pattern,
-            replacement,
-            text
-        )
+        text = re.sub(pattern, replacement, text)
 
-    # Normalize spaces inside each line
     lines = []
 
     for line in text.split("\n"):
-
         line = line.strip()
 
         if not line:
             lines.append("")
             continue
 
-        line = re.sub(
-            r"[ \t]+",
-            " ",
-            line
-        ).strip()
-
+        line = re.sub(r"[ \t]+", " ", line).strip()
         lines.append(line)
 
-    # JOIN OCR-WRAPPED LINES
-
     cleaned_lines = []
-
     current = ""
 
     for line in lines:
 
-        # Preserve blank lines as paragraph boundaries
         if not line:
-
             if current:
                 cleaned_lines.append(current)
                 current = ""
-
             continue
 
-        # Numbered item → new line
-
-        if re.match(
-            r"^\d+[\.\)]\s+",
-            line
-        ):
-
+        if re.match(r"^\d+[\.\)]\s+", line):
             if current:
                 cleaned_lines.append(current)
 
             current = line
-
             continue
 
-        # Bullet item → new line
-
-        if re.match(
-            r"^[\-\*\•]\s+",
-            line
-        ):
-
+        if re.match(r"^[\-\*\•]\s+", line):
             if current:
                 cleaned_lines.append(current)
 
             current = line
-
             continue
-        # Heading-like line
 
         heading_patterns = [
             r"^document summary assistant",
@@ -125,71 +100,37 @@ def clean_ocr_text(text):
         ]
 
         is_heading = any(
-            re.match(
-                pattern,
-                line,
-                re.IGNORECASE
-            )
+            re.match(pattern, line, re.IGNORECASE)
             for pattern in heading_patterns
         )
 
         if is_heading:
-
             if current:
                 cleaned_lines.append(current)
 
             current = line
-
             continue
-        # First line
 
         if not current:
-
             current = line
-
             continue
 
-        # Previous line already ended a sentence-
-
-        if current.endswith(
-            (".", "!", "?", ":")
-        ):
-
+        if current.endswith((".", "!", "?", ":")):
             cleaned_lines.append(current)
-
             current = line
-
         else:
-
-            # OCR wrapped line → join
-
             current += " " + line
 
     if current:
         cleaned_lines.append(current)
 
-    # FINAL CLEANUP
-
     result = "\n".join(cleaned_lines)
 
-    # Remove excessive spaces
-    result = re.sub(
-        r"[ \t]+",
-        " ",
-        result
-    )
-
-    # Remove excessive blank lines
-    result = re.sub(
-        r"\n{3,}",
-        "\n\n",
-        result
-    )
+    result = re.sub(r"[ \t]+", " ", result)
+    result = re.sub(r"\n{3,}", "\n\n", result)
 
     return result.strip()
 
-
-# IMAGE OCR
 
 def extract_image_text(file_path):
     """
@@ -199,20 +140,15 @@ def extract_image_text(file_path):
     image = Image.open(file_path)
 
     try:
-
         text = pytesseract.image_to_string(
             image,
             config="--psm 6"
         )
-
     finally:
-
         image.close()
 
     return clean_ocr_text(text)
 
-
-# SCANNED PDF OCR
 
 def extract_scanned_pdf_text(file_path):
     """
@@ -227,7 +163,6 @@ def extract_scanned_pdf_text(file_path):
 
         for page in document:
 
-            # Render PDF page at higher resolution
             pixmap = page.get_pixmap(
                 matrix=pymupdf.Matrix(2, 2),
                 alpha=False
@@ -240,29 +175,19 @@ def extract_scanned_pdf_text(file_path):
             )
 
             try:
-
                 page_text = pytesseract.image_to_string(
                     image,
                     config="--psm 6"
                 )
-
             finally:
-
                 image.close()
 
-            page_text = clean_ocr_text(
-                page_text
-            )
+            page_text = clean_ocr_text(page_text)
 
             if page_text:
-                extracted_pages.append(
-                    page_text
-                )
+                extracted_pages.append(page_text)
 
     finally:
-
         document.close()
 
-    return "\n\n".join(
-        extracted_pages
-    ).strip()
+    return "\n\n".join(extracted_pages).strip()

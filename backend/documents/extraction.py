@@ -10,10 +10,11 @@ def extract_pdf_text(file_path):
 
     text = ""
 
-    for page in document:
-        text += page.get_text()
-        text += "\n"
-
-    document.close()
+    try:
+        for page in document:
+            text += page.get_text()
+            text += "\n"
+    finally:
+        document.close()
 
     return text.strip()
