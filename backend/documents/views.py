@@ -19,7 +19,7 @@ ALLOWED_EXTENSIONS = {
     ".jpeg",
 }
 
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
 @api_view(["POST"])
@@ -27,34 +27,34 @@ def summarize(request):
 
     uploaded_file = request.FILES.get("file")
 
+    # Get summary length
+    # Supports both "summary_length" and "length"
     summary_length = request.data.get(
         "summary_length",
-        "medium"
-    ).lower()
+        request.data.get("length", "medium")
+    ).lower().strip()
 
-    # -----------------------------------------
     # FILE VALIDATION
-    # -----------------------------------------
 
     if not uploaded_file:
         return Response(
             {
                 "error": "No file was uploaded."
             },
-            status=status.HTTP_400_BAD_REQUEST,
+            status=status.HTTP_400_BAD_REQUEST
         )
+
+    # FILE SIZE VALIDATION
 
     if uploaded_file.size > MAX_FILE_SIZE:
         return Response(
             {
                 "error": "File size must not exceed 10 MB."
             },
-            status=status.HTTP_400_BAD_REQUEST,
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-    # -----------------------------------------
     # SUMMARY LENGTH VALIDATION
-    # -----------------------------------------
 
     if summary_length not in {
         "short",
@@ -68,12 +68,10 @@ def summarize(request):
                     "short, medium, or long."
                 )
             },
-            status=status.HTTP_400_BAD_REQUEST,
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-    # -----------------------------------------
     # FILE TYPE VALIDATION
-    # -----------------------------------------
 
     extension = os.path.splitext(
         uploaded_file.name
@@ -87,19 +85,19 @@ def summarize(request):
                     "Use PDF, PNG, JPG, or JPEG."
                 )
             },
-            status=status.HTTP_400_BAD_REQUEST,
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-    # -----------------------------------------
-    # CREATE TEMP DIRECTORY
-    # -----------------------------------------
+    # TEMP DIRECTORY
 
     os.makedirs(
         "temp",
         exist_ok=True
     )
 
-    safe_filename = f"{uuid.uuid4()}{extension}"
+    safe_filename = (
+        f"{uuid.uuid4()}{extension}"
+    )
 
     file_path = os.path.join(
         "temp",
@@ -108,21 +106,17 @@ def summarize(request):
 
     try:
 
-        # -----------------------------------------
         # SAVE UPLOADED FILE
-        # -----------------------------------------
 
         with open(
             file_path,
-            "wb+"
+            "wb"
         ) as destination:
 
             for chunk in uploaded_file.chunks():
                 destination.write(chunk)
 
-        # -----------------------------------------
         # TEXT EXTRACTION
-        # -----------------------------------------
 
         if extension == ".pdf":
 
@@ -130,8 +124,9 @@ def summarize(request):
                 file_path
             )
 
-            # Scanned PDF fallback
-            if not extracted_text:
+            # OCR fallback for scanned PDFs
+
+            if not extracted_text or not extracted_text.strip():
 
                 extracted_text = (
                     extract_scanned_pdf_text(
@@ -145,11 +140,9 @@ def summarize(request):
                 file_path
             )
 
-        # -----------------------------------------
         # EMPTY TEXT VALIDATION
-        # -----------------------------------------
 
-        if not extracted_text:
+        if not extracted_text or not extracted_text.strip():
 
             return Response(
                 {
@@ -158,38 +151,30 @@ def summarize(request):
                         "in the document."
                     )
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        # -----------------------------------------
         # SUMMARY GENERATION
-        # -----------------------------------------
 
         summary = generate_summary(
             extracted_text,
             summary_length
         )
 
-        # -----------------------------------------
         # KEY POINTS
-        # -----------------------------------------
 
         key_points = generate_key_points(
             extracted_text,
             count=5
         )
 
-        # -----------------------------------------
-        # IMPROVEMENT SUGGESTIONS
-        # -----------------------------------------
+        # SUGGESTIONS
 
         suggestions = generate_suggestions(
             extracted_text
         )
 
-        # -----------------------------------------
         # API RESPONSE
-        # -----------------------------------------
 
         return Response(
             {
@@ -200,12 +185,8 @@ def summarize(request):
                 "key_points": key_points,
                 "suggestions": suggestions,
             },
-            status=status.HTTP_200_OK,
+            status=status.HTTP_200_OK
         )
-
-    # -----------------------------------------
-    # ERROR HANDLING
-    # -----------------------------------------
 
     except Exception as e:
 
@@ -215,14 +196,15 @@ def summarize(request):
                     f"Document processing failed: {str(e)}"
                 )
             },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-    # -----------------------------------------
-    # CLEANUP
-    # -----------------------------------------
 
     finally:
 
+        # DELETE TEMP FILE
+
         if os.path.exists(file_path):
-            os.remove(file_path)
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
