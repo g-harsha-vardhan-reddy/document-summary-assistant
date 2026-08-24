@@ -32,10 +32,6 @@ function App() {
   const [copiedSection, setCopiedSection] =
     useState("");
 
-  // =====================================================
-  // PREVIEW URL CLEANUP
-  // =====================================================
-
   useEffect(() => {
     return () => {
       if (previewUrl) {
@@ -43,10 +39,6 @@ function App() {
       }
     };
   }, [previewUrl]);
-
-  // =====================================================
-  // CLEAR RESULTS
-  // =====================================================
 
   const clearResults = () => {
     setSummary("");
@@ -58,10 +50,6 @@ function App() {
     setDownloaded(false);
     setCopiedSection("");
   };
-
-  // =====================================================
-  // FILE VALIDATION
-  // =====================================================
 
   const isValidFile = (selectedFile) => {
     if (!selectedFile) {
@@ -98,10 +86,6 @@ function App() {
     return validType || validExtension;
   };
 
-  // =====================================================
-  // SELECT FILE
-  // =====================================================
-
   const selectFile = (selectedFile) => {
     if (!selectedFile) {
       return;
@@ -129,10 +113,6 @@ function App() {
     clearResults();
   };
 
-  // =====================================================
-  // FILE INPUT
-  // =====================================================
-
   const handleFileChange = (event) => {
     const selectedFile =
       event.target.files[0];
@@ -141,10 +121,6 @@ function App() {
 
     event.target.value = "";
   };
-
-  // =====================================================
-  // DRAG EVENTS
-  // =====================================================
 
   const handleDragEnter = (event) => {
     event.preventDefault();
@@ -179,10 +155,6 @@ function App() {
     selectFile(droppedFile);
   };
 
-  // =====================================================
-  // REMOVE DOCUMENT
-  // =====================================================
-
   const handleClearFile = () => {
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -200,10 +172,6 @@ function App() {
     setDownloaded(false);
     setCopiedSection("");
   };
-
-  // =====================================================
-  // SUMMARIZE
-  // =====================================================
 
   const handleSummarize = async () => {
     if (!file) {
@@ -271,8 +239,8 @@ function App() {
       if (!response.ok) {
         throw new Error(
           data.error ||
-            data.detail ||
-            "Failed to generate summary."
+          data.detail ||
+          "Failed to generate summary."
         );
       }
 
@@ -290,9 +258,9 @@ function App() {
 
       setExtractedText(
         data.extracted_text ||
-          data.extracted_data ||
-          data.text ||
-          ""
+        data.extracted_data ||
+        data.text ||
+        ""
       );
 
       setSuggestions(
@@ -302,6 +270,7 @@ function App() {
           ? data.suggestions
           : []
       );
+
     } catch (err) {
       console.error(
         "Summarization error:",
@@ -310,16 +279,13 @@ function App() {
 
       setError(
         err.message ||
-          "Something went wrong while processing the document."
+        "Something went wrong while processing the document."
       );
+
     } finally {
       setLoading(false);
     }
   };
-
-  // =====================================================
-  // CLEAN KEY POINT
-  // =====================================================
 
   const cleanKeyPoint = (value) => {
     let text =
@@ -348,10 +314,6 @@ function App() {
     return text.trim();
   };
 
-  // =====================================================
-  // CLEAN SUGGESTION
-  // =====================================================
-
   const cleanSuggestion = (
     value
   ) => {
@@ -376,10 +338,6 @@ function App() {
     return text.trim();
   };
 
-  // =====================================================
-  // FORMAT KEY POINTS
-  // =====================================================
-
   const formatKeyPoints = () => {
     return keyPoints
       .map(
@@ -391,10 +349,6 @@ function App() {
       .join("\n");
   };
 
-  // =====================================================
-  // FORMAT SUGGESTIONS
-  // =====================================================
-
   const formatSuggestions = () => {
     return suggestions
       .map(
@@ -405,10 +359,6 @@ function App() {
       )
       .join("\n");
   };
-
-  // =====================================================
-  // COPY
-  // =====================================================
 
   const copyToClipboard = async (
     text,
@@ -430,6 +380,7 @@ function App() {
       setTimeout(() => {
         setCopiedSection("");
       }, 2000);
+
     } catch (err) {
       console.error(
         "Copy failed:",
@@ -471,9 +422,11 @@ function App() {
     );
   };
 
-  // =====================================================
-  // DOWNLOAD
-  // =====================================================
+  const hasResults =
+    Boolean(summary) ||
+    keyPoints.length > 0 ||
+    Boolean(extractedText) ||
+    suggestions.length > 0;
 
   const handleDownload = () => {
     if (!hasResults) {
@@ -581,25 +534,9 @@ Generated by Document Summary Assistant
     setDownloaded(true);
   };
 
-  // =====================================================
-  // RESULT CHECK
-  // =====================================================
-
-  const hasResults =
-    Boolean(summary) ||
-    keyPoints.length > 0 ||
-    Boolean(extractedText) ||
-    suggestions.length > 0;
-
-  // =====================================================
-  // RENDER
-  // =====================================================
-
   return (
     <div className="app">
       <div className="container">
-
-        {/* HEADER */}
 
         <header className="header">
 
@@ -618,8 +555,6 @@ Generated by Document Summary Assistant
           </p>
 
         </header>
-
-        {/* UPLOAD COMPONENT */}
 
         <UploadBox
           file={file}
@@ -643,8 +578,6 @@ Generated by Document Summary Assistant
             handleClearFile
           }
         />
-
-        {/* SUMMARY LENGTH */}
 
         <section className="length-section">
 
@@ -712,8 +645,6 @@ Generated by Document Summary Assistant
 
         </section>
 
-        {/* ERROR */}
-
         {error && (
           <div className="error-box">
 
@@ -727,8 +658,6 @@ Generated by Document Summary Assistant
 
           </div>
         )}
-
-        {/* SUMMARIZE */}
 
         <button
           type="button"
@@ -748,8 +677,6 @@ Generated by Document Summary Assistant
           )}
         </button>
 
-        {/* DOWNLOAD */}
-
         {hasResults && (
           <button
             type="button"
@@ -767,8 +694,6 @@ Generated by Document Summary Assistant
             ✅ Results downloaded successfully.
           </div>
         )}
-
-        {/* RESULTS */}
 
         {hasResults && (
           <section className="results">
