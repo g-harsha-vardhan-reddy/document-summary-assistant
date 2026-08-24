@@ -1,4 +1,5 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import torch
 import re
 
 from .chunker import split_text
@@ -348,17 +349,19 @@ def summarize_chunk(
             max_length // 2
         )
 
-    outputs = model.generate(
-        **inputs,
-        max_length=max_length,
-        min_length=min_length,
-        num_beams=2,
-        do_sample=False,
-        no_repeat_ngram_size=3,
-        repetition_penalty=1.1,
-        length_penalty=1.0,
-        early_stopping=True
-    )
+    with torch.no_grad():
+
+        outputs = model.generate(
+            **inputs,
+            max_length=max_length,
+            min_length=min_length,
+            num_beams=2,
+            do_sample=False,
+            no_repeat_ngram_size=3,
+            repetition_penalty=1.1,
+            length_penalty=1.0,
+            early_stopping=True
+            )
 
     summary = tokenizer.decode(
         outputs[0],
