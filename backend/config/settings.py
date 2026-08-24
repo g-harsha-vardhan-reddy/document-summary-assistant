@@ -32,11 +32,13 @@ ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
         "DJANGO_ALLOWED_HOSTS",
-        "localhost,127.0.0.1"
+        "localhost,127.0.0.1,document-summary-assistant-66if.onrender.com"
     ).split(",")
     if host.strip()
 ]
-
+CSRF_TRUSTED_ORIGINS = [
+    "https://document-summary-assistant-66if.onrender.com",
+]
 
 # Application definition
 
