@@ -6,15 +6,10 @@ from .chunker import split_text
 
 # Model
 
-MODEL_NAME = "facebook/bart-large-cnn"
+MODEL_NAME = "sshleifer/distilbart-cnn-6-6"
 
-tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_NAME
-)
-
-model = AutoModelForSeq2SeqLM.from_pretrained(
-    MODEL_NAME
-)
+tokenizer = None
+model = None
 
 
 # Summary settings
@@ -22,28 +17,45 @@ model = AutoModelForSeq2SeqLM.from_pretrained(
 SUMMARY_SETTINGS = {
     "short": {
         "sentences": 3,
-        "max_length": 100,
-        "min_length": 30,
+        "max_length": 80,
+        "min_length": 25,
     },
     "medium": {
         "sentences": 7,
-        "max_length": 160,
-        "min_length": 50,
+        "max_length": 140,
+        "min_length": 45,
     },
     "long": {
         "sentences": 10,
-        "max_length": 220,
-        "min_length": 70,
+        "max_length": 200,
+        "min_length": 65,
     },
 }
+
+
+# Load model only when required
+
+def load_model():
+
+    global tokenizer
+    global model
+
+    if tokenizer is None or model is None:
+
+        tokenizer = AutoTokenizer.from_pretrained(
+            MODEL_NAME
+        )
+
+        model = AutoModelForSeq2SeqLM.from_pretrained(
+            MODEL_NAME
+        )
+
+        model.eval()
 
 
 # Clean document
 
 def clean_document_text(text):
-    """
-    Clean extracted or OCR document text.
-    """
 
     if not text:
         return ""
@@ -59,8 +71,6 @@ def clean_document_text(text):
 
         lower = line.lower()
 
-        # Remove standalone headings
-
         if lower in {
             "scanned document",
             "key information",
@@ -68,23 +78,19 @@ def clean_document_text(text):
         }:
             continue
 
-        # Remove OCR test sentence
-
         if lower.startswith(
             "ocr test sentence:"
         ):
             continue
-
-        # Remove project heading
 
         if lower.startswith(
             "project topic:"
         ):
             continue
 
-        # Convert purpose heading into content
-
-        if lower.startswith("purpose:"):
+        if lower.startswith(
+            "purpose:"
+        ):
 
             parts = line.split(
                 ":",
@@ -96,7 +102,9 @@ def clean_document_text(text):
                 content = parts[1].strip()
 
                 if content:
-                    lines.append(content)
+                    lines.append(
+                        content
+                    )
 
             continue
 
@@ -116,9 +124,6 @@ def clean_document_text(text):
 # Extract sentences
 
 def extract_sentences(text):
-    """
-    Extract complete sentences from text.
-    """
 
     if not text:
         return []
@@ -148,9 +153,6 @@ def extract_sentences(text):
 # Score important sentences
 
 def score_sentences(sentences):
-    """
-    Rank sentences according to their relevance.
-    """
 
     keywords = [
         "document",
@@ -192,20 +194,18 @@ def score_sentences(sentences):
 
     scored = []
 
-    for index, sentence in enumerate(sentences):
+    for index, sentence in enumerate(
+        sentences
+    ):
 
         lower = sentence.lower()
 
         score = 0
 
-        # Keyword relevance
-
         for keyword in keywords:
 
             if keyword in lower:
                 score += 2
-
-        # Action words
 
         for word in action_words:
 
@@ -213,16 +213,12 @@ def score_sentences(sentences):
                 score += 2
                 break
 
-        # Prefer useful sentence length
-
         word_count = len(
             sentence.split()
         )
 
         if 8 <= word_count <= 30:
             score += 2
-
-        # Prefer complete sentences
 
         if sentence.endswith(
             (".", "!", "?")
@@ -253,13 +249,6 @@ def summarize_small_document(
     text,
     length
 ):
-    """
-    Create a summary for small documents.
-
-    Short: 3 sentences
-    Medium: 7 sentences
-    Long: 10 sentences
-    """
 
     sentences = extract_sentences(
         text
@@ -268,16 +257,9 @@ def summarize_small_document(
     if not sentences:
         return ""
 
-    settings = SUMMARY_SETTINGS[
+    required_sentences = SUMMARY_SETTINGS[
         length
-    ]
-
-    required_sentences = settings[
-        "sentences"
-    ]
-
-    # If the document has fewer sentences
-    # than requested, use all available sentences.
+    ]["sentences"]
 
     required_sentences = min(
         required_sentences,
@@ -291,8 +273,6 @@ def summarize_small_document(
     selected = scored[
         :required_sentences
     ]
-
-    # Restore original document order
 
     selected.sort(
         key=lambda item: item[1]
@@ -314,12 +294,11 @@ def summarize_chunk(
     text,
     length="medium"
 ):
-    """
-    Summarize a document chunk using BART.
-    """
 
     if not text or not text.strip():
         return ""
+
+    load_model()
 
     text = text.strip()
 
@@ -339,20 +318,18 @@ def summarize_chunk(
         text,
         return_tensors="pt",
         truncation=True,
-        max_length=1024
+        max_length=768
     )
 
     input_tokens = inputs[
         "input_ids"
     ].shape[1]
 
-    # Prevent invalid generation limits
-
     max_length = min(
         max_length,
         max(
             30,
-            int(input_tokens * 0.75)
+            int(input_tokens * 0.70)
         )
     )
 
@@ -360,7 +337,7 @@ def summarize_chunk(
         min_length,
         max(
             15,
-            int(input_tokens * 0.25)
+            int(input_tokens * 0.20)
         )
     )
 
@@ -373,20 +350,13 @@ def summarize_chunk(
 
     outputs = model.generate(
         **inputs,
-
         max_length=max_length,
         min_length=min_length,
-
-        num_beams=4,
-
+        num_beams=2,
         do_sample=False,
-
         no_repeat_ngram_size=3,
-
         repetition_penalty=1.1,
-
         length_penalty=1.0,
-
         early_stopping=True
     )
 
@@ -404,13 +374,6 @@ def control_summary_length(
     summary,
     length
 ):
-    """
-    Control the final summary sentence count.
-
-    Short: maximum 3 sentences
-    Medium: maximum 7 sentences
-    Long: maximum 10 sentences
-    """
 
     if not summary:
         return ""
@@ -437,23 +400,9 @@ def generate_summary(
     text,
     length="medium"
 ):
-    """
-    Generate short, medium, or long summary.
-
-    Short:
-        Up to 3 sentences.
-
-    Medium:
-        Up to 7 sentences.
-
-    Long:
-        Up to 10 sentences.
-    """
 
     if not text or not text.strip():
         return ""
-
-    # Validate summary length
 
     if length not in {
         "short",
@@ -462,8 +411,6 @@ def generate_summary(
     }:
         length = "medium"
 
-    # Clean document
-
     cleaned_text = clean_document_text(
         text
     )
@@ -471,11 +418,9 @@ def generate_summary(
     if not cleaned_text:
         return ""
 
-    # Split document
-
     chunks = split_text(
         cleaned_text,
-        chunk_size=2500
+        chunk_size=2000
     )
 
     if not chunks:
@@ -509,20 +454,14 @@ def generate_summary(
     if not chunk_summaries:
         return ""
 
-    # Combine chunk summaries
-
     combined_text = " ".join(
         chunk_summaries
     )
-
-    # Generate final summary
 
     final_summary = summarize_chunk(
         combined_text,
         length
     )
-
-    # Control final sentence count
 
     final_summary = control_summary_length(
         final_summary,
